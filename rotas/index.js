@@ -1,7 +1,7 @@
 const express = require('express');
 const roteador = express.Router();
 
-const controladorRfid = require('../controladores/controladorRfid');
+const controladorRfid = require('../controladores/controladorRFID');
 const controladorSaude = require('../controladores/controladorSaude');
 
 roteador.get('/saude', controladorSaude.verificarSaude);
@@ -9,7 +9,7 @@ roteador.get('/saude/bd', controladorSaude.verificarBancoDados);
 roteador.get('/status', controladorSaude.status);
 
 roteador.post('/rfid/leitura', controladorRfid.criarLeitura);
-roteador.post('/rfid/lote', controladorRfid.criarLeitura);
+roteador.post('/rfid/multiplas', controladorRfid.criarLeitura);
 roteador.get('/rfid/leituras', controladorRfid.obterTodasLeituras);
 roteador.get('/rfid/tag/:idTag', controladorRfid.obterLeiturasPorTag);
 roteador.get('/rfid/funcionario/:nomeFuncionario', controladorRfid.obterLeiturasPorFuncionario);
@@ -24,7 +24,7 @@ roteador.get('/', (req, res) => {
             saudeBd: '/api/saude/bd',
             status: '/api/status',
             postLeitura: 'POST /api/rfid/leitura (única leitura ou múltiplas)',
-            postLote: 'POST /api/rfid/lote (mesmo que /leitura - múltiplas leituras)',
+            postMultiplas: 'POST /api/rfid/multiplas (múltiplas leituras em lote)',
             getLeituras: 'GET /api/rfid/leituras',
             getPorTag: 'GET /api/rfid/tag/:idTag',
             getPorFuncionario: 'GET /api/rfid/funcionario/:nomeFuncionario',
@@ -44,7 +44,7 @@ roteador.get('/', (req, res) => {
             }
         },
         exemploLeiturasMultiplas: {
-            url: '/api/rfid/leitura',
+            url: '/api/rfid/multiplas',
             metodo: 'POST',
             descricao: 'Enviar múltiplas leituras RFID em um único POST',
             corpo: [
