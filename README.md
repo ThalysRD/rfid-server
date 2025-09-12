@@ -34,13 +34,20 @@ rfid-server/
 
 ```sql
 CREATE TABLE leituras_rfid (
-    id SERIAL PRIMARY KEY,
-    idTag VARCHAR(255) NOT NULL,
-    dataHoraLeitura TIMESTAMP NOT NULL,
-    idDispositivo VARCHAR(255) NOT NULL,
-    criadoEm TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    "id" SERIAL PRIMARY KEY,
+    "idTag" VARCHAR(255) NOT NULL,
+    "dataHoraLeitura" TIMESTAMP NOT NULL,
+    "idDispositivo" VARCHAR(255) NOT NULL,
+    "criadoEm" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Índices para performance
+CREATE INDEX idx_leituras_rfid_idtag ON leituras_rfid("idTag");
+CREATE INDEX idx_leituras_rfid_dispositivo ON leituras_rfid("idDispositivo");
+CREATE INDEX idx_leituras_rfid_data ON leituras_rfid("dataHoraLeitura");
 ```
+
+> **Importante**: Os nomes das colunas usam aspas duplas para preservar o camelCase no PostgreSQL.
 
 ## 🛠️ Instalação
 
