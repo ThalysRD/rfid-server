@@ -9,10 +9,9 @@ roteador.get('/saude/bd', controladorSaude.verificarBancoDados);
 roteador.get('/status', controladorSaude.status);
 
 roteador.post('/rfid/leitura', controladorRfid.criarLeitura);
-roteador.post('/rfid/multiplas', controladorRfid.criarLeitura);
 roteador.get('/rfid/leituras', controladorRfid.obterTodasLeituras);
 roteador.get('/rfid/tag/:idTag', controladorRfid.obterLeiturasPorTag);
-roteador.get('/rfid/funcionario/:nomeFuncionario', controladorRfid.obterLeiturasPorFuncionario);
+roteador.get('/rfid/dispositivo/:idDispositivo', controladorRfid.obterLeiturasPorDispositivo);
 roteador.get('/rfid/periodo', controladorRfid.obterLeiturasPorPeriodo);
 
 roteador.get('/', (req, res) => {
@@ -24,10 +23,9 @@ roteador.get('/', (req, res) => {
             saudeBd: '/api/saude/bd',
             status: '/api/status',
             postLeitura: 'POST /api/rfid/leitura (única leitura ou múltiplas)',
-            postMultiplas: 'POST /api/rfid/multiplas (múltiplas leituras em lote)',
             getLeituras: 'GET /api/rfid/leituras',
             getPorTag: 'GET /api/rfid/tag/:idTag',
-            getPorFuncionario: 'GET /api/rfid/funcionario/:nomeFuncionario',
+            getPorDispositivo: 'GET /api/rfid/dispositivo/:idDispositivo',
             getPorPeriodo: 'GET /api/rfid/periodo?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD'
         },
         exemploLeituraUnica: {
@@ -35,34 +33,25 @@ roteador.get('/', (req, res) => {
             metodo: 'POST',
             descricao: 'Enviar uma única leitura RFID',
             corpo: {
-                idTag: '1234567890',
-                nomeFuncionario: 'João Silva',
-                dataHoraLeitura: '2025-09-04T10:30:00Z',
-                rssi: -45,
-                localizacao: 'entrada',
+                idTag: 'A1B2C3D4E5F6',
+                dataHoraLeitura: '2025-09-04T14:30:00Z',
                 idDispositivo: 'esp32_001'
             }
         },
         exemploLeiturasMultiplas: {
-            url: '/api/rfid/multiplas',
+            url: '/api/rfid/leitura',
             metodo: 'POST',
-            descricao: 'Enviar múltiplas leituras RFID em um único POST',
+            descricao: 'Enviar múltiplas leituras RFID na mesma rota',
             corpo: [
                 {
-                    idTag: '1234567890',
-                    nomeFuncionario: 'João Silva',
-                    dataHoraLeitura: '2025-09-04T10:30:00Z',
-                    rssi: -45,
-                    localizacao: 'entrada',
+                    idTag: 'A1B2C3D4E5F6',
+                    dataHoraLeitura: '2025-09-04T14:30:00Z',
                     idDispositivo: 'esp32_001'
                 },
                 {
-                    idTag: '0987654321',
-                    nomeFuncionario: 'Maria Santos',
-                    dataHoraLeitura: '2025-09-04T10:31:15Z',
-                    rssi: -52,
-                    localizacao: 'entrada',
-                    idDispositivo: 'esp32_001'
+                    idTag: 'B2C3D4E5F6A1',
+                    dataHoraLeitura: '2025-09-04T14:31:15Z',
+                    idDispositivo: 'esp32_002'
                 }
             ]
         }

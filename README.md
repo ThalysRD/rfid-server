@@ -1,15 +1,15 @@
 # 📡 Servidor RFID - ESP32
 
-API completa para gerenciamento de leituras RFID com ESP32 e PostgreSQL. Todos os nomes de variáveis, funções e endpoints estão em português para melhor compreensão.
+API simplificada para gerenciamento de leituras RFID com ESP32 e PostgreSQL. Sistema otimizado com foco nos dados essenciais.
 
 ## 🚀 Características
 
 - ✅ API RESTful em Node.js com Express
 - ✅ Banco de dados PostgreSQL
-- ✅ Suporte a leituras únicas e em lote
-- ✅ Validação completa de dados
+- ✅ Suporte a leituras únicas e múltiplas em uma única rota
+- ✅ Validação simplificada de dados essenciais
 - ✅ Sistema de saúde e monitoramento
-- ✅ Estrutura de código totalmente em português
+- ✅ Estrutura otimizada focada no essencial
 - ✅ Compatível com ESP32
 
 ## 📁 Estrutura do Projeto
@@ -17,7 +17,7 @@ API completa para gerenciamento de leituras RFID com ESP32 e PostgreSQL. Todos o
 ```
 rfid-server/
 ├── controladores/
-│   ├── controladorRfid.js      # Controlador das leituras RFID
+│   ├── controladorRFID.js      # Controlador das leituras RFID
 │   └── controladorSaude.js     # Controlador de saúde do sistema
 ├── infra/
 │   └── bancoDados.js           # Configuração do banco PostgreSQL
@@ -35,13 +35,10 @@ rfid-server/
 ```sql
 CREATE TABLE leituras_rfid (
     id SERIAL PRIMARY KEY,
-    id_tag VARCHAR(50) NOT NULL,
-    nome_funcionario VARCHAR(255) NOT NULL,
-    data_e_hora_leitura TIMESTAMP NOT NULL,
-    rssi INTEGER,
-    local VARCHAR(100),
-    id_dispositivo VARCHAR(50),
-    criado_em TIMESTAMP DEFAULT NOW()
+    idTag VARCHAR(255) NOT NULL,
+    dataHoraLeitura TIMESTAMP NOT NULL,
+    idDispositivo VARCHAR(255) NOT NULL,
+    criadoEm TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -94,14 +91,13 @@ npm start
 
 ### 📡 Leituras RFID
 
-| Método | Endpoint                                 | Descrição                   |
-| ------ | ---------------------------------------- | --------------------------- |
-| POST   | `/api/rfid/leitura`                      | Criar leitura(s) RFID       |
-| POST   | `/api/rfid/lote`                         | Criar múltiplas leituras    |
-| GET    | `/api/rfid/leituras`                     | Listar todas as leituras    |
-| GET    | `/api/rfid/tag/:idTag`                   | Leituras por tag específica |
-| GET    | `/api/rfid/funcionario/:nomeFuncionario` | Leituras por funcionário    |
-| GET    | `/api/rfid/periodo`                      | Leituras por período        |
+| Método | Endpoint                               | Descrição                   |
+| ------ | -------------------------------------- | --------------------------- |
+| POST   | `/api/rfid/leitura`                    | Criar leitura(s) RFID       |
+| GET    | `/api/rfid/leituras`                   | Listar todas as leituras    |
+| GET    | `/api/rfid/tag/:idTag`                 | Leituras por tag específica |
+| GET    | `/api/rfid/dispositivo/:idDispositivo` | Leituras por dispositivo    |
+| GET    | `/api/rfid/periodo`                    | Leituras por período        |
 
 ## 📝 Exemplos de Uso
 
@@ -112,15 +108,12 @@ curl -X POST http://localhost:3000/api/rfid/leitura \
   -H "Content-Type: application/json" \
   -d '{
     "idTag": "A1B2C3D4E5F6",
-    "nomeFuncionario": "João Silva",
     "dataHoraLeitura": "2025-09-04T14:30:00Z",
-    "rssi": -45,
-    "localizacao": "entrada",
     "idDispositivo": "esp32_001"
   }'
 ```
 
-### 🔹 Múltiplas leituras
+### 🔹 Múltiplas leituras (mesma rota)
 
 ```bash
 curl -X POST http://localhost:3000/api/rfid/leitura \
@@ -128,18 +121,12 @@ curl -X POST http://localhost:3000/api/rfid/leitura \
   -d '[
     {
       "idTag": "A1B2C3D4E5F6",
-      "nomeFuncionario": "João Silva",
       "dataHoraLeitura": "2025-09-04T14:30:00Z",
-      "rssi": -45,
-      "localizacao": "entrada",
       "idDispositivo": "esp32_001"
     },
     {
-      "idTag": "1234567890AB",
-      "nomeFuncionario": "Maria Santos",
+      "idTag": "B2C3D4E5F6A1",
       "dataHoraLeitura": "2025-09-04T14:31:15Z",
-      "rssi": -52,
-      "localizacao": "saida",
       "idDispositivo": "esp32_002"
     }
   ]'
@@ -153,17 +140,13 @@ curl "http://localhost:3000/api/rfid/periodo?dataInicio=2025-09-01&dataFim=2025-
 
 ## 📋 Campos da Leitura RFID
 
-### Obrigatórios:
+### Campos Obrigatórios:
 
 - `idTag` (string): Identificador da tag RFID
-- `nomeFuncionario` (string): Nome do funcionário
 - `dataHoraLeitura` (string): Data/hora da leitura (ISO 8601)
+- `idDispositivo` (string): Identificador do dispositivo ESP32
 
-### Opcionais:
-
-- `rssi` (number): Intensidade do sinal (-100 a 0)
-- `localizacao` (string): Local da leitura (padrão: "desconhecido")
-- `idDispositivo` (string): ID do dispositivo ESP32 (padrão: "esp32")
+> **Nota:** O sistema foi simplificado para focar apenas nos dados essenciais. Campos como `nomeFuncionario`, `rssi` e `localizacao` foram removidos para otimizar o desempenho.
 
 ## 🔧 Desenvolvimento
 
@@ -194,10 +177,7 @@ npm run setup      # Testa conexão com banco
     {
       "id": 123,
       "idTag": "A1B2C3D4E5F6",
-      "nomeFuncionario": "João Silva",
       "dataHoraLeitura": "2025-09-04T14:30:00Z",
-      "rssi": -45,
-      "localizacao": "entrada",
       "idDispositivo": "esp32_001",
       "criadoEm": "2025-09-04T14:30:05Z"
     }
@@ -234,7 +214,7 @@ const char* ssid = "SUA_REDE_WIFI";
 const char* password = "SUA_SENHA_WIFI";
 const char* serverURL = "http://seu-servidor:3000/api/rfid/leitura";
 
-void enviarLeituraRFID(String idTag, String nomeFuncionario) {
+void enviarLeituraRFID(String idTag) {
     if(WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
         http.begin(serverURL);
@@ -242,10 +222,8 @@ void enviarLeituraRFID(String idTag, String nomeFuncionario) {
 
         StaticJsonDocument<200> doc;
         doc["idTag"] = idTag;
-        doc["nomeFuncionario"] = nomeFuncionario;
         doc["dataHoraLeitura"] = "2025-09-04T14:30:00Z";
         doc["idDispositivo"] = "esp32_001";
-        doc["localizacao"] = "entrada";
 
         String jsonString;
         serializeJson(doc, jsonString);
@@ -260,9 +238,51 @@ void enviarLeituraRFID(String idTag, String nomeFuncionario) {
         http.end();
     }
 }
+
+// Exemplo para múltiplas leituras
+void enviarMultiplasLeituras() {
+    if(WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        http.begin(serverURL);
+        http.addHeader("Content-Type", "application/json");
+
+        // Array de leituras
+        String jsonPayload = R"([
+            {
+                "idTag": "A1B2C3D4E5F6",
+                "dataHoraLeitura": "2025-09-04T14:30:00Z",
+                "idDispositivo": "esp32_001"
+            },
+            {
+                "idTag": "B2C3D4E5F6A1",
+                "dataHoraLeitura": "2025-09-04T14:31:00Z",
+                "idDispositivo": "esp32_001"
+            }
+        ])";
+
+        int httpResponseCode = http.POST(jsonPayload);
+
+        if(httpResponseCode > 0) {
+            String response = http.getString();
+            Serial.println("Resposta: " + response);
+        }
+
+        http.end();
+    }
+}
 ```
 
-## 🔍 Monitoramento
+## � Mudanças Recentes
+
+### v2.0 - Sistema Simplificado
+
+- ✅ **Dados simplificados**: Apenas 3 campos obrigatórios (`idTag`, `dataHoraLeitura`, `idDispositivo`)
+- ✅ **Rota unificada**: Uma única rota `/api/rfid/leitura` para leituras únicas e múltiplas
+- ✅ **Performance otimizada**: Estrutura de banco de dados simplificada
+- ✅ **API mais limpa**: Removidas rotas duplicadas (`/rfid/multiplas`)
+- ✅ **Endpoint atualizado**: `/rfid/dispositivo/:idDispositivo` substitui `/rfid/funcionario/:nomeFuncionario`
+
+## �🔍 Monitoramento
 
 ### Verificar saúde:
 
