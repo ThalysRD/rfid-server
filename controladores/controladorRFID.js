@@ -18,14 +18,29 @@ const controladorRfid = {
                 const leitura = leituras[i];
                 const erros = [];
 
+                // Campos obrigatórios
                 if (!leitura.idTag) {
                     erros.push('idTag é obrigatório');
                 }
-                if (!leitura.dataHoraLeitura) {
-                    erros.push('dataHoraLeitura é obrigatório');
-                }
                 if (!leitura.idDispositivo) {
                     erros.push('idDispositivo é obrigatório');
+                }
+
+                // Validar ranges de coordenadas GPS (apenas se fornecidas)
+                if (leitura.latitude !== undefined && leitura.latitude !== null) {
+                    if (leitura.latitude < -90 || leitura.latitude > 90) {
+                        erros.push('latitude deve estar entre -90 e 90');
+                    }
+                }
+                if (leitura.longitude !== undefined && leitura.longitude !== null) {
+                    if (leitura.longitude < -180 || leitura.longitude > 180) {
+                        erros.push('longitude deve estar entre -180 e 180');
+                    }
+                }
+                if (leitura.altitude !== undefined && leitura.altitude !== null) {
+                    if (typeof leitura.altitude !== 'number') {
+                        erros.push('altitude deve ser um número');
+                    }
                 }
 
                 if (erros.length > 0) {
@@ -60,13 +75,16 @@ const controladorRfid = {
                 try {
                     const resultado = await bancoDados.query(`
                         INSERT INTO leituras_rfid 
-                        ("idTag", "dataHoraLeitura", "idDispositivo", "criadoEm") 
-                        VALUES ($1, $2, $3, NOW()) 
+                        ("idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude") 
+                        VALUES ($1, $2, $3, $4, $5, $6) 
                         RETURNING *
                     `, [
                         leitura.idTag,
-                        leitura.dataHoraLeitura,
-                        leitura.idDispositivo
+                        leitura.idDispositivo,
+                        leitura.dataHoraLeitura || null,
+                        leitura.latitude || null,
+                        leitura.longitude || null,
+                        leitura.altitude || null
                     ]);
 
                     leiturasInseridas.push(resultado.rows[0]);
@@ -95,8 +113,11 @@ const controladorRfid = {
                 dados: leiturasInseridas.map(linha => ({
                     id: linha.id,
                     idTag: linha.idTag,
-                    dataHoraLeitura: linha.dataHoraLeitura,
                     idDispositivo: linha.idDispositivo,
+                    dataHoraLeitura: linha.dataHoraLeitura,
+                    latitude: linha.latitude,
+                    longitude: linha.longitude,
+                    altitude: linha.altitude,
                     criadoEm: linha.criadoEm
                 }))
             };
@@ -125,9 +146,9 @@ const controladorRfid = {
             const { limite = 50, deslocamento = 0 } = req.query;
 
             const resultado = await bancoDados.query(`
-                SELECT "id", "idTag", "dataHoraLeitura", "idDispositivo", "criadoEm" 
+                SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
                 FROM leituras_rfid 
-                ORDER BY "dataHoraLeitura" DESC 
+                ORDER BY "criadoEm" DESC 
                 LIMIT $1 OFFSET $2
             `, [limite, deslocamento]);
 
@@ -136,8 +157,11 @@ const controladorRfid = {
                 leituras: resultado.rows.map(linha => ({
                     id: linha.id,
                     idTag: linha.idTag,
-                    dataHoraLeitura: linha.dataHoraLeitura,
                     idDispositivo: linha.idDispositivo,
+                    dataHoraLeitura: linha.dataHoraLeitura,
+                    latitude: linha.latitude,
+                    longitude: linha.longitude,
+                    altitude: linha.altitude,
                     criadoEm: linha.criadoEm
                 })),
                 total: resultado.rowCount,
@@ -162,10 +186,10 @@ const controladorRfid = {
             const { limite = 20 } = req.query;
 
             const resultado = await bancoDados.query(`
-                SELECT "id", "idTag", "dataHoraLeitura", "idDispositivo", "criadoEm" 
+                SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
                 FROM leituras_rfid 
                 WHERE "idTag" = $1 
-                ORDER BY "dataHoraLeitura" DESC 
+                ORDER BY "criadoEm" DESC 
                 LIMIT $2
             `, [idTag, limite]);
 
@@ -175,8 +199,11 @@ const controladorRfid = {
                 leituras: resultado.rows.map(linha => ({
                     id: linha.id,
                     idTag: linha.idTag,
-                    dataHoraLeitura: linha.dataHoraLeitura,
                     idDispositivo: linha.idDispositivo,
+                    dataHoraLeitura: linha.dataHoraLeitura,
+                    latitude: linha.latitude,
+                    longitude: linha.longitude,
+                    altitude: linha.altitude,
                     criadoEm: linha.criadoEm
                 })),
                 contagem: resultado.rowCount
@@ -197,10 +224,10 @@ const controladorRfid = {
             const { limite = 20 } = req.query;
 
             const resultado = await bancoDados.query(`
-                SELECT "id", "idTag", "dataHoraLeitura", "idDispositivo", "criadoEm" 
+                SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
                 FROM leituras_rfid 
                 WHERE "idDispositivo" = $1 
-                ORDER BY "dataHoraLeitura" DESC 
+                ORDER BY "criadoEm" DESC 
                 LIMIT $2
             `, [idDispositivo, limite]);
 
@@ -210,8 +237,11 @@ const controladorRfid = {
                 leituras: resultado.rows.map(linha => ({
                     id: linha.id,
                     idTag: linha.idTag,
-                    dataHoraLeitura: linha.dataHoraLeitura,
                     idDispositivo: linha.idDispositivo,
+                    dataHoraLeitura: linha.dataHoraLeitura,
+                    latitude: linha.latitude,
+                    longitude: linha.longitude,
+                    altitude: linha.altitude,
                     criadoEm: linha.criadoEm
                 })),
                 contagem: resultado.rowCount
@@ -239,10 +269,10 @@ const controladorRfid = {
             }
 
             const resultado = await bancoDados.query(`
-                SELECT "id", "idTag", "dataHoraLeitura", "idDispositivo", "criadoEm" 
+                SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
                 FROM leituras_rfid 
-                WHERE "dataHoraLeitura" BETWEEN $1 AND $2 
-                ORDER BY "dataHoraLeitura" DESC 
+                WHERE "criadoEm" BETWEEN $1 AND $2 
+                ORDER BY "criadoEm" DESC 
                 LIMIT $3
             `, [dataInicio, dataFim, limite]);
 
@@ -252,8 +282,11 @@ const controladorRfid = {
                 leituras: resultado.rows.map(linha => ({
                     id: linha.id,
                     idTag: linha.idTag,
-                    dataHoraLeitura: linha.dataHoraLeitura,
                     idDispositivo: linha.idDispositivo,
+                    dataHoraLeitura: linha.dataHoraLeitura,
+                    latitude: linha.latitude,
+                    longitude: linha.longitude,
+                    altitude: linha.altitude,
                     criadoEm: linha.criadoEm
                 })),
                 contagem: resultado.rowCount

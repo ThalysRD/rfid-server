@@ -31,29 +31,44 @@ roteador.get('/', (req, res) => {
         exemploLeituraUnica: {
             url: '/api/rfid/leitura',
             metodo: 'POST',
-            descricao: 'Enviar uma única leitura RFID',
+            descricao: 'Enviar uma única leitura RFID (GPS é opcional)',
             corpo: {
                 idTag: 'A1B2C3D4E5F6',
-                dataHoraLeitura: '2025-09-04T14:30:00Z',
-                idDispositivo: 'esp32_001'
+                idDispositivo: 'esp32_001',
+                dataHoraLeitura: '2025-09-04T14:30:00-03:00',
+                latitude: -3.7319,
+                longitude: -38.5267,
+                altitude: 45.230
             }
         },
         exemploLeiturasMultiplas: {
             url: '/api/rfid/leitura',
             metodo: 'POST',
-            descricao: 'Enviar múltiplas leituras RFID na mesma rota',
+            descricao: 'Enviar múltiplas leituras RFID (GPS é opcional)',
             corpo: [
                 {
                     idTag: 'A1B2C3D4E5F6',
-                    dataHoraLeitura: '2025-09-04T14:30:00Z',
-                    idDispositivo: 'esp32_001'
+                    idDispositivo: 'esp32_001',
+                    dataHoraLeitura: '2025-09-04T14:30:00-03:00',
+                    latitude: -3.7319,
+                    longitude: -38.5267,
+                    altitude: 45.230
                 },
                 {
                     idTag: 'B2C3D4E5F6A1',
-                    dataHoraLeitura: '2025-09-04T14:31:15Z',
-                    idDispositivo: 'esp32_002'
+                    idDispositivo: 'esp32_002',
+                    dataHoraLeitura: '2025-09-04T14:31:15-03:00'
                 }
             ]
+        },
+        exemploMinimo: {
+            url: '/api/rfid/leitura',
+            metodo: 'POST',
+            descricao: 'Enviar leitura RFID com apenas campos obrigatórios',
+            corpo: {
+                idTag: 'A1B2C3D4E5F6',
+                idDispositivo: 'esp32_001'
+            }
         }
     });
 });
