@@ -43,10 +43,16 @@ async function consulta(texto, parametros) {
     }
 }
 
+async function obterClienteTransacao() {
+    const cliente = await poolConexoes.connect();
+    return cliente;
+}
+
 const bancoDados = {
     pool: poolConexoes,
     query: consulta,
-    testConnection: testarConexao
+    testConnection: testarConexao,
+    getClient: obterClienteTransacao
 };
 
 module.exports = bancoDados;

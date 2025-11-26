@@ -124,15 +124,20 @@ const controladorArquivo = {
                 }
             }
 
-            // Inserir leituras válidas no banco
+            // Inserir leituras válidas no banco usando transação
             const leiturasInseridas = [];
             const errosInsercao = [];
+            const cliente = await bancoDados.getClient();
 
-            for (let i = 0; i < leiturasValidas.length; i++) {
-                const leitura = leiturasValidas[i];
+            try {
+                // Iniciar transação
+                await cliente.query('BEGIN');
+                console.log('Transação iniciada para inserção de', leiturasValidas.length, 'leituras');
 
-                try {
-                    const resultado = await bancoDados.query(`
+                for (let i = 0; i < leiturasValidas.length; i++) {
+                    const leitura = leiturasValidas[i];
+
+                    const resultado = await cliente.query(`
                         INSERT INTO leituras_rfid 
                         ("idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude") 
                         VALUES ($1, $2, $3, $4, $5, $6) 
@@ -147,22 +152,41 @@ const controladorArquivo = {
                     ]);
 
                     leiturasInseridas.push(resultado.rows[0]);
-                    console.log(`Leitura ${i + 1} do arquivo inserida com sucesso`);
-
-                } catch (erro) {
-                    console.error(`Erro ao inserir leitura ${i + 1} do arquivo:`, erro.message);
-                    errosInsercao.push({
-                        indice: i,
-                        leitura: leitura,
-                        erro: erro.message
-                    });
+                    console.log(`Leitura ${i + 1}/${leiturasValidas.length} inserida na transação`);
                 }
+
+                // Commit da transação - todas as inserções foram bem-sucedidas
+                await cliente.query('COMMIT');
+                console.log('Transação confirmada:', leiturasInseridas.length, 'leituras salvas no banco de dados');
+
+            } catch (erro) {
+                // Rollback da transação - desfazer todas as inserções
+                await cliente.query('ROLLBACK');
+                console.error('Erro ao inserir leituras - ROLLBACK executado:', erro.message);
+                
+                errosInsercao.push({
+                    erro: 'Transação revertida devido a erro na inserção',
+                    mensagem: erro.message,
+                    detalhes: 'Nenhuma leitura foi salva no banco de dados'
+                });
+                
+                // Limpar array de leituras inseridas pois o rollback foi feito
+                leiturasInseridas.length = 0;
+            } finally {
+                // Liberar o cliente de volta ao pool
+                cliente.release();
             }
 
             // Preparar resposta detalhada
+            const houveRollback = errosInsercao.length > 0 && leiturasInseridas.length === 0;
             const resposta = {
-                sucesso: true,
-                mensagem: `Arquivo processado: ${leiturasInseridas.length} leituras inseridas`,
+                sucesso: leiturasInseridas.length > 0,
+                mensagem: houveRollback 
+                    ? 'Arquivo processado mas nenhuma leitura foi salva devido a erro (rollback executado)'
+                    : `Arquivo processado: ${leiturasInseridas.length} leituras inseridas com sucesso`,
+                transacao: houveRollback 
+                    ? { status: 'revertida', motivo: 'Erro durante inserção - todas as operações foram desfeitas' }
+                    : { status: 'confirmada', registrosInseridos: leiturasInseridas.length },
                 arquivo: {
                     nome: req.file.originalname,
                     tamanho: req.file.size,
