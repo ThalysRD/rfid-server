@@ -2,11 +2,20 @@ const bancoDados = require('../infra/bancoDados');
 
 const controladorSaude = {
     verificarSaude: (req, res) => {
+        const memoriaUsada = process.memoryUsage();
+        const memoriaFormatada = {
+            rss: `${Math.round(memoriaUsada.rss / 1024 / 1024)}MB`,
+            heapTotal: `${Math.round(memoriaUsada.heapTotal / 1024 / 1024)}MB`,
+            heapUsed: `${Math.round(memoriaUsada.heapUsed / 1024 / 1024)}MB`,
+            external: `${Math.round(memoriaUsada.external / 1024 / 1024)}MB`
+        };
+        
         res.json({
             status: 'OK',
             dataHora: new Date().toISOString(),
-            tempoAtivo: process.uptime(),
-            memoria: process.memoryUsage()
+            tempoAtivo: `${Math.floor(process.uptime())}s`,
+            memoria: memoriaFormatada,
+            versaoNode: process.version
         });
     },
 
@@ -37,30 +46,33 @@ const controladorSaude = {
         try {
             const atualizadoEm = new Date().toISOString();
 
-            const resultadoVersaoBd = await bancoDados.query("SHOW server_version;");
-            const valorVersaoBd = resultadoVersaoBd.rows[0].server_version;
+            // Executar queries em paralelo para melhor performance
+            const [versaoBd, maxConexoes, conexoesAbertas] = await Promise.all([
+                bancoDados.query("SHOW server_version;"),
+                bancoDados.query("SHOW max_connections;"),
+                bancoDados.query({
+                    text: `SELECT count(*)::int FROM pg_stat_activity WHERE datname = $1;`,
+                    values: [process.env.PGDATABASE]
+                })
+            ]);
 
-            const resultadoMaxConexoesBd = await bancoDados.query("SHOW max_connections;");
-            const valorMaxConexoesBd = resultadoMaxConexoesBd.rows[0].max_connections;
-
-            const nomeBancoDados = process.env.PGDATABASE;
-
-            const resultadoConexoesAbertasBd = await bancoDados.query({
-                text: `SELECT count(*)::int FROM pg_stat_activity WHERE datname = $1;`,
-                values: [nomeBancoDados],
-            });
-
-            const valorConexoesAbertasBd = resultadoConexoesAbertasBd.rows[0].count;
+            const poolStats = bancoDados.getPoolStats();
 
             res.status(200).json({
                 atualizado_em: atualizadoEm,
+                servidor: {
+                    ambiente: process.env.NODE_ENV || 'production',
+                    versao_node: process.version,
+                    uptime: `${Math.floor(process.uptime())}s`
+                },
                 dependencias: {
                     banco_dados: {
-                        versao: valorVersaoBd,
-                        max_conexoes: parseInt(valorMaxConexoesBd),
-                        conexoes_abertas: valorConexoesAbertasBd,
-                    },
-                },
+                        versao: versaoBd.rows[0].server_version,
+                        max_conexoes: parseInt(maxConexoes.rows[0].max_connections),
+                        conexoes_ativas: conexoesAbertas.rows[0].count,
+                        pool: poolStats
+                    }
+                }
             });
 
         } catch (erro) {
@@ -68,7 +80,7 @@ const controladorSaude = {
             res.status(500).json({
                 atualizado_em: new Date().toISOString(),
                 erro: 'Erro ao obter status do banco de dados',
-                mensagem: erro.message
+                mensagem: process.env.NODE_ENV === 'development' ? erro.message : 'Erro interno'
             });
         }
     }
