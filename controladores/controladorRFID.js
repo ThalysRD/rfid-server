@@ -151,24 +151,16 @@ const controladorRfid = {
 
     obterTodasLeituras: async (req, res) => {
         try {
-            const limite = Math.min(parseInt(req.query.limite) || 50, 1000); // Máximo 1000
-            const deslocamento = parseInt(req.query.deslocamento) || 0;
-
             const resultado = await bancoDados.query(`
                 SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
                 FROM leituras_rfid 
-                ORDER BY "criadoEm" DESC 
-                LIMIT $1 OFFSET $2
-            `, [limite, deslocamento]);
+                ORDER BY "criadoEm" DESC
+            `);
 
             res.json({
                 sucesso: true,
                 leituras: resultado.rows.map(mapearLeitura),
-                total: resultado.rowCount,
-                paginacao: {
-                    limite,
-                    deslocamento
-                }
+                total: resultado.rowCount
             });
 
         } catch (erro) {
@@ -183,7 +175,6 @@ const controladorRfid = {
     obterLeiturasPorTag: async (req, res) => {
         try {
             const { idTag } = req.params;
-            const limite = Math.min(parseInt(req.query.limite) || 20, 1000);
 
             if (!idTag || idTag.trim() === '') {
                 return res.status(400).json({
@@ -196,9 +187,8 @@ const controladorRfid = {
                 SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
                 FROM leituras_rfid 
                 WHERE "idTag" = $1 
-                ORDER BY "criadoEm" DESC 
-                LIMIT $2
-            `, [idTag, limite]);
+                ORDER BY "criadoEm" DESC
+            `, [idTag]);
 
             res.json({
                 sucesso: true,
@@ -219,7 +209,6 @@ const controladorRfid = {
     obterLeiturasPorDispositivo: async (req, res) => {
         try {
             const { idDispositivo } = req.params;
-            const limite = Math.min(parseInt(req.query.limite) || 20, 1000);
 
             if (!idDispositivo || idDispositivo.trim() === '') {
                 return res.status(400).json({
@@ -232,9 +221,8 @@ const controladorRfid = {
                 SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
                 FROM leituras_rfid 
                 WHERE "idDispositivo" = $1 
-                ORDER BY "criadoEm" DESC 
-                LIMIT $2
-            `, [idDispositivo, limite]);
+                ORDER BY "criadoEm" DESC
+            `, [idDispositivo]);
 
             res.json({
                 sucesso: true,
@@ -255,7 +243,6 @@ const controladorRfid = {
     obterLeiturasPorPeriodo: async (req, res) => {
         try {
             const { dataInicio, dataFim } = req.query;
-            const limite = Math.min(parseInt(req.query.limite) || 50, 1000);
 
             if (!dataInicio || !dataFim) {
                 return res.status(400).json({
@@ -288,9 +275,8 @@ const controladorRfid = {
                 SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
                 FROM leituras_rfid 
                 WHERE "criadoEm" BETWEEN $1 AND $2 
-                ORDER BY "criadoEm" DESC 
-                LIMIT $3
-            `, [dataInicio, dataFim, limite]);
+                ORDER BY "criadoEm" DESC
+            `, [dataInicio, dataFim]);
 
             res.json({
                 sucesso: true,
