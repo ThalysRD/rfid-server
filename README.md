@@ -127,10 +127,10 @@ npm start
 
 ### 📡 Leituras RFID
 
-| Método | Endpoint                               | Descrição                      |
-| ------ | -------------------------------------- | ------------------------------ |
+| Método | Endpoint                               | Descrição                      | Observação                         |
+| ------ | -------------------------------------- | ------------------------------ | ------------------------------------------------------------ 
 | POST   | `/api/rfid/leitura`                    | Criar leitura(s) RFID          |
-| POST   | `/api/rfid/arquivo`                    | Upload de arquivo TXT          |
+| POST   | `/api/rfid/arquivo`                    | Upload de arquivo TXT          | Modo padrão de operação do código atual do microcontrolador
 | GET    | `/api/rfid/leituras`                   | Listar todas (paginado)        |
 | GET    | `/api/rfid/tag/:idTag`                 | Leituras por tag específica    |
 | GET    | `/api/rfid/dispositivo/:idDispositivo` | Leituras por dispositivo       |
