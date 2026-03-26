@@ -532,45 +532,6 @@ O servidor registra automaticamente:
 ⚠️ Query lenta (1523ms): SELECT * FROM leituras_rfid WHERE...
 ```
 
-### Ativando Debug Completo:
-
-```bash
-# .env
-NODE_ENV=development
-ENABLE_LOGGING=true
-POOL_DEBUG=true
-```
-
-## 🤝 Contribuição
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
-
-## 💡 Melhores Práticas
-
-### Performance:
-- ✅ Use **bulk insert** para múltiplas leituras (array de objetos)
-- ✅ Configure **CORS_ORIGIN** específico em produção
-- ✅ Mantenha **ENABLE_LOGGING=false** em produção
-- ✅ Use paginação com `limite` e `deslocamento`
-- ✅ Configure índices no banco de dados
-
-### Segurança:
-- 🔒 Nunca exponha `.env` em repositórios
-- 🔒 Use SSL/TLS em produção
-- 🔒 Configure firewall para PostgreSQL
-- 🔒 Implemente autenticação (API Keys)
-- 🔒 Use HTTPS para comunicação ESP32
-
-### ESP32:
-- 📡 Envie leituras em batch quando possível
-- 📡 Implemente retry logic no ESP32
-- 📡 Use HTTPS se disponível
-- 📡 Adicione timeout nas requisições HTTP
-- 📡 Valide conectividade WiFi antes de enviar
 
 ## ❓ FAQ
 
@@ -591,16 +552,4 @@ R: Use `pg_dump` ou ferramentas do seu provedor (Vercel, Neon, Supabase).
 
 **P: O GPS é obrigatório?**  
 R: Não! Latitude, longitude e altitude são campos opcionais.
-
-## 📄 Licença
-
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 📧 Contato
-
-- **Desenvolvedor:** ThalysRD
-- **GitHub:** [https://github.com/ThalysRD](https://github.com/ThalysRD)
-
 ---
-
-⭐ Se este projeto foi útil para você, considere dar uma estrela no repositório!
