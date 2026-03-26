@@ -552,4 +552,5 @@ R: Use `pg_dump` ou ferramentas do seu provedor (Vercel, Neon, Supabase).
 
 **P: O GPS é obrigatório?**  
 R: Não! Latitude, longitude e altitude são campos opcionais.
+
 ---
