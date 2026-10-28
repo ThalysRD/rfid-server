@@ -1,0 +1,162 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API RFID",
+    "version": "2.1.0",
+    "description": "Recebe e consulta leituras RFID enviadas por dispositivos ESP32, com horário e coordenadas opcionais. Desenvolvida na residência tecnológica EmbarcaTech."
+  },
+  "servers": [{ "url": "/api" }],
+  "tags": [
+    { "name": "Leituras", "description": "Envio e consulta de leituras RFID" },
+    { "name": "Saúde", "description": "Disponibilidade da API e do banco" }
+  ],
+  "paths": {
+    "/rfid/leitura": {
+      "post": {
+        "tags": ["Leituras"],
+        "summary": "Registra uma leitura ou um lote de leituras",
+        "description": "Aceita um objeto ou um array. Com mais de uma leitura, grava tudo em um único INSERT. Se qualquer leitura for inválida, nada é gravado e a resposta lista os erros por índice.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  { "$ref": "#/components/schemas/NovaLeitura" },
+                  { "type": "array", "items": { "$ref": "#/components/schemas/NovaLeitura" } }
+                ]
+              },
+              "example": [
+                { "idTag": "A1B2C3D4", "idDispositivo": "esp32-portao-01", "dataHoraLeitura": "2026-03-10T08:15:00Z", "latitude": -5.8323, "longitude": -35.2054 },
+                { "idTag": "E5F6A7B8", "idDispositivo": "esp32-portao-01" }
+              ]
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Leituras gravadas" },
+          "400": { "description": "Campos obrigatórios ausentes, coordenadas fora do intervalo ou JSON malformado" },
+          "500": { "description": "Erro ao gravar no banco" }
+        }
+      }
+    },
+    "/rfid/arquivo": {
+      "post": {
+        "tags": ["Leituras"],
+        "summary": "Importa um arquivo .txt com uma leitura JSON por linha",
+        "description": "Usado para enviar registros acumulados no dispositivo durante períodos sem conexão. As inserções rodam em uma transação: se uma falhar, todas são desfeitas. Linhas com JSON inválido são ignoradas e listadas na resposta.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": { "arquivo": { "type": "string", "format": "binary" } },
+                "required": ["arquivo"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Arquivo processado e leituras gravadas" },
+          "400": { "description": "Arquivo ausente, tipo inválido ou sem nenhum JSON válido" },
+          "500": { "description": "Transação revertida" }
+        }
+      }
+    },
+    "/rfid/leituras": {
+      "get": {
+        "tags": ["Leituras"],
+        "summary": "Lista leituras com paginação",
+        "parameters": [
+          { "name": "pagina", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Também aceita `page`." },
+          { "name": "limite", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 50 }, "description": "Também aceita `limit`. Valores acima de 200 viram 200." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de leituras, da mais recente para a mais antiga",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ListaPaginada" } } }
+          }
+        }
+      }
+    },
+    "/rfid/tag/{idTag}": {
+      "get": {
+        "tags": ["Leituras"],
+        "summary": "Leituras de uma tag",
+        "parameters": [{ "name": "idTag", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Leituras da tag" } }
+      }
+    },
+    "/rfid/dispositivo/{idDispositivo}": {
+      "get": {
+        "tags": ["Leituras"],
+        "summary": "Leituras de um dispositivo",
+        "parameters": [{ "name": "idDispositivo", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Leituras do dispositivo" } }
+      }
+    },
+    "/rfid/periodo": {
+      "get": {
+        "tags": ["Leituras"],
+        "summary": "Leituras gravadas entre duas datas",
+        "parameters": [
+          { "name": "dataInicio", "in": "query", "required": true, "schema": { "type": "string", "format": "date-time" } },
+          { "name": "dataFim", "in": "query", "required": true, "schema": { "type": "string", "format": "date-time" } }
+        ],
+        "responses": {
+          "200": { "description": "Leituras do período" },
+          "400": { "description": "Datas ausentes, inválidas ou fora de ordem" }
+        }
+      }
+    },
+    "/saude": {
+      "get": { "tags": ["Saúde"], "summary": "Verifica se a API está no ar", "responses": { "200": { "description": "OK" } } }
+    },
+    "/saude/bd": {
+      "get": { "tags": ["Saúde"], "summary": "Verifica a conexão com o PostgreSQL", "responses": { "200": { "description": "Banco conectado" }, "500": { "description": "Banco indisponível" } } }
+    },
+    "/status": {
+      "get": { "tags": ["Saúde"], "summary": "Versão do banco, conexões e uso do pool", "responses": { "200": { "description": "Status" } } }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NovaLeitura": {
+        "type": "object",
+        "required": ["idTag", "idDispositivo"],
+        "properties": {
+          "idTag": { "type": "string" },
+          "idDispositivo": { "type": "string" },
+          "dataHoraLeitura": { "type": "string", "format": "date-time" },
+          "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+          "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+          "altitude": { "type": "number" }
+        }
+      },
+      "Leitura": {
+        "allOf": [
+          { "$ref": "#/components/schemas/NovaLeitura" },
+          { "type": "object", "properties": { "id": { "type": "integer" }, "criadoEm": { "type": "string", "format": "date-time" } } }
+        ]
+      },
+      "ListaPaginada": {
+        "type": "object",
+        "properties": {
+          "sucesso": { "type": "boolean" },
+          "leituras": { "type": "array", "items": { "$ref": "#/components/schemas/Leitura" } },
+          "total": { "type": "integer" },
+          "paginacao": {
+            "type": "object",
+            "properties": {
+              "pagina": { "type": "integer" },
+              "limite": { "type": "integer" },
+              "total": { "type": "integer" },
+              "totalPaginas": { "type": "integer" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

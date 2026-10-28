@@ -28,6 +28,22 @@ function validarLeitura(leitura) {
     return erros;
 }
 
+const LIMITE_PADRAO = 50;
+const LIMITE_MAXIMO = 200;
+
+// Lê ?pagina e ?limite (aceita também ?page e ?limit). Valores inválidos voltam ao padrão.
+function lerPaginacao(query) {
+    const paginaBruta = parseInt(query.pagina ?? query.page, 10);
+    const limiteBruto = parseInt(query.limite ?? query.limit, 10);
+
+    const pagina = Number.isInteger(paginaBruta) && paginaBruta > 0 ? paginaBruta : 1;
+    const limite = Number.isInteger(limiteBruto) && limiteBruto > 0
+        ? Math.min(limiteBruto, LIMITE_MAXIMO)
+        : LIMITE_PADRAO;
+
+    return { pagina, limite, deslocamento: (pagina - 1) * limite };
+}
+
 function mapearLeitura(linha) {
     return {
         id: linha.id,
@@ -151,16 +167,30 @@ const controladorRfid = {
 
     obterTodasLeituras: async (req, res) => {
         try {
-            const resultado = await bancoDados.query(`
-                SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
-                FROM leituras_rfid 
-                ORDER BY "criadoEm" DESC
-            `);
+            const { pagina, limite, deslocamento } = lerPaginacao(req.query);
+
+            const [resultado, contagem] = await Promise.all([
+                bancoDados.query(`
+                    SELECT "id", "idTag", "idDispositivo", "dataHoraLeitura", "latitude", "longitude", "altitude", "criadoEm" 
+                    FROM leituras_rfid 
+                    ORDER BY "criadoEm" DESC
+                    LIMIT $1 OFFSET $2
+                `, [limite, deslocamento]),
+                bancoDados.query('SELECT COUNT(*)::int AS total FROM leituras_rfid')
+            ]);
+
+            const total = contagem.rows[0].total;
 
             res.json({
                 sucesso: true,
                 leituras: resultado.rows.map(mapearLeitura),
-                total: resultado.rowCount
+                total,
+                paginacao: {
+                    pagina,
+                    limite,
+                    total,
+                    totalPaginas: Math.max(1, Math.ceil(total / limite))
+                }
             });
 
         } catch (erro) {
@@ -296,3 +326,5 @@ const controladorRfid = {
 };
 
 module.exports = controladorRfid;
+module.exports.lerPaginacao = lerPaginacao;
+module.exports.validarLeitura = validarLeitura;

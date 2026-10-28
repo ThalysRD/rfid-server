@@ -1,55 +1,8 @@
-const express = require('express');
-const cors = require('cors');
 const { testConnection: testarConexao, pool } = require('./infra/bancoDados');
-const rotas = require('./rotas');
 require('dotenv').config();
+const aplicacao = require('./app');
 
-const aplicacao = express();
 const PORTA = process.env.PORT || 3000;
-
-// Configuração CORS otimizada
-const corsOptions = {
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
-    credentials: true,
-    maxAge: 86400 // Cache preflight por 24h
-};
-
-aplicacao.use(cors(corsOptions));
-aplicacao.use(express.json({ limit: '10mb' }));
-aplicacao.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Logging otimizado - apenas em desenvolvimento ou quando habilitado
-if (process.env.NODE_ENV === 'development' || process.env.ENABLE_LOGGING === 'true') {
-    aplicacao.use((req, res, next) => {
-        const inicio = Date.now();
-        res.on('finish', () => {
-            const duracao = Date.now() - inicio;
-            console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duracao}ms)`);
-        });
-        next();
-    });
-}
-
-aplicacao.use('/api', rotas);
-
-aplicacao.use((erro, req, res, next) => {
-    console.error('Erro não tratado:', erro);
-    res.status(500).json({
-        sucesso: false,
-        erro: 'Erro interno do servidor',
-        mensagem: process.env.NODE_ENV === 'development' ? erro.message : 'Erro interno'
-    });
-});
-
-aplicacao.use('*', (req, res) => {
-    res.status(404).json({
-        sucesso: false,
-        erro: 'Rota não encontrada',
-        caminho: req.originalUrl
-    });
-});
 
 let servidor;
 
@@ -67,6 +20,7 @@ async function iniciarServidor() {
             console.log(`📡 Porta: ${PORTA}`);
             console.log(`🏥 Saúde: /api/saude`);
             console.log(`📝 API: /api/rfid/leitura`);
+            console.log(`📚 Documentação: /api/docs`);
             console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'production'}`);
         });
 
@@ -122,4 +76,8 @@ function configurarGracefulShutdown() {
     });
 }
 
-iniciarServidor();
+if (require.main === module) {
+    iniciarServidor();
+}
+
+module.exports = aplicacao;
