@@ -6,8 +6,9 @@ const poolConexoes = new Pool({
     database: process.env.PGDATABASE,
     user: process.env.PGUSER,
     password: process.env.PGPASSWORD,
-    port: 5432,
-    ssl: {
+    port: Number(process.env.PGPORT) || 5432,
+    // SSL continua ligado por padrão (Neon/Supabase). Use PGSSLMODE=disable para um PostgreSQL local.
+    ssl: process.env.PGSSLMODE === 'disable' ? false : {
         require: true,
         rejectUnauthorized: false
     },
